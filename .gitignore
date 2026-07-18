@@ -20,6 +20,7 @@ coverage/
 .idea/
 .vscode/
 .DS_Store
+.cursor/plans/
 
 # Local infrastructure data
 .data/
