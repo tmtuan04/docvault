@@ -1,2 +1,15 @@
-// The database client and schema will be added with PostgreSQL infrastructure.
-export const DATABASE_PACKAGE_READY = true;
+/**
+ * Public API of `@document-saas/db`.
+ *
+ * Applications should import clients, tenant helpers, tables and inferred
+ * model types from this file instead of reaching into internal modules.
+ */
+export {
+  createDatabase,
+  withTenantTransaction,
+  type Database,
+  type DatabaseClient,
+  type DatabaseTransaction,
+} from './client.js';
+
+export * from './schema.js';

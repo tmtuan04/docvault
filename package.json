@@ -16,7 +16,12 @@
     "infra:up": "docker compose -f infra/docker-compose.yml up -d",
     "infra:down": "docker compose -f infra/docker-compose.yml down",
     "infra:logs": "docker compose -f infra/docker-compose.yml logs -f",
-    "infra:ps": "docker compose -f infra/docker-compose.yml ps"
+    "infra:ps": "docker compose -f infra/docker-compose.yml ps",
+    "db:generate": "pnpm --filter @document-saas/db db:generate",
+    "db:migrate": "pnpm --filter @document-saas/db db:migrate",
+    "db:studio": "pnpm --filter @document-saas/db db:studio",
+    "db:check": "pnpm --filter @document-saas/db db:check",
+    "db:smoke-rls": "pnpm --filter @document-saas/db db:smoke-rls"
   },
   "devDependencies": {
     "prettier": "^3.9.5",

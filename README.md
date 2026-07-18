@@ -16,7 +16,7 @@ apps/
   api/       NestJS API
   worker/    Background worker
 packages/
-  db/        Database package placeholder
+  db/        Drizzle schema, migrations, and tenant-scoped DB helpers
   shared/    Shared types and constants
 ```
 
@@ -39,7 +39,7 @@ The web app runs at `http://localhost:3000` and the API at
 | Service    | Port(s)       | Purpose                                    |
 | ---------- | ------------- | ------------------------------------------ |
 | PostgreSQL | `5432`        | Multi-tenant database (pgvector enabled)   |
-| Redis      | `6379`        | Queue backend for background workers        |
+| Redis      | `6379`        | Queue backend for background workers       |
 | MinIO      | `9000`/`9001` | S3-compatible object storage (API/console) |
 
 MinIO stands in for Cloudflare R2 locally; the `documents` bucket is created
@@ -60,6 +60,25 @@ To reset all local data:
 pnpm infra:down && rm -rf .data
 ```
 
+## Database
+
+The PostgreSQL schema and migrations live in `packages/db`. Runtime queries use
+the non-superuser `docvault_app` role so PostgreSQL Row Level Security cannot be
+bypassed accidentally. Drizzle migrations use the separate local admin URL.
+
+```bash
+pnpm db:generate   # generate a migration after changing src/schema.ts
+pnpm db:migrate    # apply pending migrations
+pnpm db:check      # validate generated migration metadata
+pnpm db:smoke-rls  # prove tenant A cannot read/write tenant B data
+pnpm db:studio     # inspect local data (admin access; bypasses RLS)
+```
+
+Tenant-scoped application queries must run through
+`withTenantTransaction(db, tenantId, callback)`. It uses a transaction-local
+PostgreSQL setting, preventing pooled connections from leaking tenant context
+between requests.
+
 ## Checks
 
 ```bash
@@ -67,6 +86,3 @@ pnpm lint
 pnpm typecheck
 pnpm build
 ```
-
-Copy `.env.example` to `.env` after PostgreSQL, Redis, and object storage are
-introduced.
