@@ -1,0 +1,22 @@
+{
+  "name": "document-saas",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write \"**/*.{js,json,md,ts,tsx,yaml,yml}\"",
+    "format:check": "prettier --check \"**/*.{js,json,md,ts,tsx,yaml,yml}\""
+  },
+  "devDependencies": {
+    "prettier": "^3.9.5",
+    "turbo": "^2.10.5",
+    "typescript": "catalog:"
+  }
+}
