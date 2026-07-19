@@ -227,6 +227,10 @@ export default function DashboardPage() {
               onValueChange={(value) => {
                 if (value) setSelectedId(value);
               }}
+              items={workspaces.map((workspace) => ({
+                value: workspace.id,
+                label: workspace.name,
+              }))}
             >
               <SelectTrigger className="w-full max-w-64">
                 <SelectValue placeholder="Chọn workspace" />
@@ -460,6 +464,11 @@ export default function DashboardPage() {
                   onValueChange={(value) => {
                     if (value) setInviteRole(value as typeof inviteRole);
                   }}
+                  items={[
+                    { value: 'admin', label: 'Quản trị' },
+                    { value: 'member', label: 'Thành viên' },
+                    { value: 'viewer', label: 'Chỉ xem' },
+                  ]}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue />
