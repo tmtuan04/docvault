@@ -16,4 +16,16 @@ export {
 export * from './schema.js';
 
 // Re-export query helpers so consumers use the same Drizzle package instance.
-export { and, desc, eq } from 'drizzle-orm';
+export {
+  and,
+  asc,
+  cosineDistance,
+  desc,
+  eq,
+  gt,
+  ilike,
+  isNotNull,
+  isNull,
+  or,
+  sql,
+} from 'drizzle-orm';

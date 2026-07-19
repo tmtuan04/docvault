@@ -5,6 +5,8 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { auth } from './auth.js';
 import { DatabaseLifecycle } from './database.js';
+import { DocumentsModule } from './documents/documents.module.js';
+import { RetrievalModule } from './retrieval/retrieval.module.js';
 import { WorkspacesModule } from './workspaces/workspaces.module.js';
 
 @Module({
@@ -18,6 +20,8 @@ import { WorkspacesModule } from './workspaces/workspaces.module.js';
       },
     }),
     WorkspacesModule,
+    DocumentsModule,
+    RetrievalModule,
   ],
   controllers: [AppController],
   providers: [AppService, DatabaseLifecycle],

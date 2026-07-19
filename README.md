@@ -95,6 +95,19 @@ switch workspaces, list members, and create invitation links. Console OTP
 delivery is blocked in production; configure a real email provider before
 deploying.
 
+## Documents, ingest and RAG
+
+`pnpm dev` starts the web app, API and BullMQ worker together.
+
+1. Upload PDF/DOCX/TXT/MD from the dashboard (presigned PUT to MinIO).
+2. API marks the document `processing` and enqueues an ingest job on Redis.
+3. Worker extracts text, chunks it, writes embeddings into `document_chunks`,
+   then marks the document `ready`.
+4. Keyword search and RAG chat become available for that workspace.
+
+Local default is `AI_PROVIDER=mock` (deterministic embeddings/chat, no paid
+key). Set `AI_PROVIDER=openai` and `OPENAI_API_KEY` to use real models.
+
 ## Frontend UI
 
 All product UI in `apps/web` uses Tailwind CSS v4 and shadcn/ui. Add missing

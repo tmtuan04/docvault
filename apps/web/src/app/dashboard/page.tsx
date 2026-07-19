@@ -8,12 +8,13 @@ import {
   LoaderCircle,
   LogOut,
   Plus,
-  Search,
-  Sparkles,
   UserPlus,
   Users,
 } from 'lucide-react';
 
+import { ChatPanel } from '@/components/chat/chat-panel';
+import { DocumentsPanel } from '@/components/documents/documents-panel';
+import { SearchPanel } from '@/components/search/search-panel';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -195,7 +196,7 @@ export default function DashboardPage() {
 
   if (session.isPending || isLoading) {
     return (
-      <main className="mx-auto min-h-screen max-w-6xl space-y-6 px-6 py-8">
+      <main className="mx-auto min-h-screen max-w-[1400px] space-y-6 px-6 py-8">
         <Skeleton className="h-12 w-full" />
         <div className="grid gap-4 md:grid-cols-3">
           <Skeleton className="h-40" />
@@ -211,7 +212,7 @@ export default function DashboardPage() {
   return (
     <main className="min-h-screen bg-muted/30">
       <header className="border-b bg-background">
-        <div className="mx-auto flex max-w-6xl items-center gap-4 px-6 py-4">
+        <div className="mx-auto flex max-w-[1400px] items-center gap-4 px-6 py-4">
           <div className="flex items-center gap-2 font-semibold">
             <div className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground">
               <FileText className="size-4" />
@@ -280,7 +281,7 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-6xl space-y-6 px-6 py-8">
+      <div className="mx-auto max-w-[1400px] space-y-6 px-6 py-8">
         {error ? (
           <Alert variant="destructive">
             <AlertTitle>Đã xảy ra lỗi</AlertTitle>
@@ -330,41 +331,27 @@ export default function DashboardPage() {
               ) : null}
             </section>
 
-            <section className="grid gap-4 md:grid-cols-3">
-              <Card>
-                <CardHeader>
-                  <Search className="size-5 text-muted-foreground" />
-                  <CardTitle>Tìm kiếm tài liệu</CardTitle>
-                  <CardDescription>
-                    Keyword search sẽ được bật ở bước Docs/RAG tiếp theo.
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <Sparkles className="size-5 text-muted-foreground" />
-                  <CardTitle>RAG chat</CardTitle>
-                  <CardDescription>
-                    Hỏi đáp có citations sau khi ingest pipeline hoàn thành.
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <Users className="size-5 text-muted-foreground" />
-                  <CardTitle>{members.length} thành viên</CardTitle>
-                  <CardDescription>
-                    Quyền truy cập được quản lý theo workspace role.
-                  </CardDescription>
-                </CardHeader>
-              </Card>
+            <section className="grid gap-4 lg:grid-cols-2">
+              <DocumentsPanel
+                tenantId={selected.id}
+                canWrite={selected.role !== 'viewer'}
+                onError={setError}
+              />
+              <div className="space-y-4">
+                <SearchPanel tenantId={selected.id} onError={setError} />
+                <ChatPanel tenantId={selected.id} onError={setError} />
+              </div>
             </section>
 
             <Card>
               <CardHeader>
-                <CardTitle>Thành viên</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="size-5" />
+                  Thành viên
+                  <Badge variant="secondary">{members.length}</Badge>
+                </CardTitle>
                 <CardDescription>
-                  Những người hiện có quyền truy cập workspace.
+                  Quyền truy cập được quản lý theo workspace role.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-1">

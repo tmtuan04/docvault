@@ -24,3 +24,5 @@ coverage/
 
 # Local infrastructure data
 .data/
+
+docs/
