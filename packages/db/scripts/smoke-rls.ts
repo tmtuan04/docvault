@@ -14,10 +14,12 @@ import { eq, inArray } from 'drizzle-orm';
 import {
   createDatabase,
   documents,
+  memberships,
   tags,
   tenants,
   users,
   withTenantTransaction,
+  withUserTransaction,
 } from '../src/index.js';
 
 loadEnv({
@@ -46,7 +48,7 @@ try {
   await admin.db.insert(users).values({
     id: userId,
     email: `rls-${suffix}@example.test`,
-    displayName: 'RLS smoke test',
+    name: 'RLS smoke test',
   });
 
   await admin.db.insert(tenants).values([
@@ -73,6 +75,11 @@ try {
     },
   ]);
 
+  await admin.db.insert(memberships).values([
+    { tenantId: tenantA, userId, role: 'owner' },
+    { tenantId: tenantB, userId, role: 'member' },
+  ]);
+
   // No tenant context must reveal no tenant-owned rows.
   const withoutContext = await runtime.db
     .select({ name: documents.name })
@@ -89,6 +96,16 @@ try {
     runtime.db,
     tenantB,
     async (tx) => tx.select({ name: documents.name }).from(documents),
+  );
+
+  const userMemberships = await withUserTransaction(
+    runtime.db,
+    userId,
+    async (tx) =>
+      tx
+        .select({ tenantId: memberships.tenantId })
+        .from(memberships)
+        .where(eq(memberships.userId, userId)),
   );
 
   // A valid tenant-A transaction still cannot write a tenant-B row.
@@ -111,13 +128,14 @@ try {
     visibleToA[0]?.name === 'tenant-a.pdf' &&
     visibleToB.length === 1 &&
     visibleToB[0]?.name === 'tenant-b.pdf' &&
+    userMemberships.length === 2 &&
     crossTenantWriteBlocked;
 
   if (!passed) {
     throw new Error(
       `RLS failed: no-context=${withoutContext.length}, tenant-a=${JSON.stringify(
         visibleToA,
-      )}, tenant-b=${JSON.stringify(visibleToB)}, blocked=${crossTenantWriteBlocked}`,
+      )}, tenant-b=${JSON.stringify(visibleToB)}, memberships=${userMemberships.length}, blocked=${crossTenantWriteBlocked}`,
     );
   }
 

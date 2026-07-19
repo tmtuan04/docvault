@@ -8,6 +8,7 @@
 import { sql } from 'drizzle-orm';
 import {
   bigint,
+  boolean,
   foreignKey,
   index,
   integer,
@@ -63,6 +64,12 @@ export const documentStatusEnum = pgEnum('document_status', [
   'failed',
 ]);
 
+export const invitationStatusEnum = pgEnum('invitation_status', [
+  'pending',
+  'accepted',
+  'revoked',
+]);
+
 /**
  * Global user identities.
  *
@@ -74,7 +81,10 @@ export const users = pgTable(
   {
     id: uuid('id').defaultRandom().primaryKey(),
     email: varchar('email', { length: 320 }).notNull(),
-    displayName: varchar('display_name', { length: 255 }),
+    // Better Auth expects these property names; SQL remains snake_case.
+    name: varchar('display_name', { length: 255 }).notNull(),
+    emailVerified: boolean('email_verified').default(false).notNull(),
+    image: text('image'),
     ...timestamps,
   },
   (table) => [uniqueIndex('users_email_uidx').on(table.email)],
@@ -120,6 +130,123 @@ export const memberships = pgTable(
     index('memberships_user_tenant_idx').on(table.userId, table.tenantId),
     index('memberships_tenant_role_idx').on(table.tenantId, table.role),
   ],
+);
+
+/**
+ * Email invitations for users who do not have a membership yet.
+ * The token is shared only in the invite link and expires automatically.
+ */
+export const workspaceInvitations = pgTable(
+  'workspace_invitations',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    email: varchar('email', { length: 320 }).notNull(),
+    role: membershipRoleEnum('role').default('member').notNull(),
+    status: invitationStatusEnum('status').default('pending').notNull(),
+    token: varchar('token', { length: 128 }).notNull(),
+    invitedBy: uuid('invited_by')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    acceptedAt: timestamp('accepted_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex('workspace_invitations_token_uidx').on(table.token),
+    index('workspace_invitations_tenant_email_idx').on(
+      table.tenantId,
+      table.email,
+    ),
+    index('workspace_invitations_expires_idx').on(table.expiresAt),
+  ],
+);
+
+/**
+ * Better Auth session records. These are global identity records rather than
+ * tenant business data, so tenant RLS is not applied to auth tables.
+ */
+export const sessions = pgTable(
+  'sessions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    token: text('token').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    ipAddress: text('ip_address'),
+    userAgent: text('user_agent'),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+  },
+  (table) => [
+    uniqueIndex('sessions_token_uidx').on(table.token),
+    index('sessions_user_idx').on(table.userId),
+  ],
+);
+
+// Provider credentials and tokens used by Better Auth.
+export const accounts = pgTable(
+  'accounts',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    accountId: text('account_id').notNull(),
+    providerId: text('provider_id').notNull(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    accessToken: text('access_token'),
+    refreshToken: text('refresh_token'),
+    idToken: text('id_token'),
+    accessTokenExpiresAt: timestamp('access_token_expires_at', {
+      withTimezone: true,
+    }),
+    refreshTokenExpiresAt: timestamp('refresh_token_expires_at', {
+      withTimezone: true,
+    }),
+    scope: text('scope'),
+    password: text('password'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index('accounts_user_idx').on(table.userId),
+    unique('accounts_provider_account_uidx').on(
+      table.providerId,
+      table.accountId,
+    ),
+  ],
+);
+
+// Short-lived OTP and email verification values used by Better Auth.
+export const verifications = pgTable(
+  'verifications',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    identifier: text('identifier').notNull(),
+    value: text('value').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [index('verifications_identifier_idx').on(table.identifier)],
 );
 
 /**
@@ -337,6 +464,14 @@ export const documentTags = pgTable(
   ],
 );
 
+// Better Auth's Drizzle adapter resolves plural model keys from this object.
+export const authSchema = {
+  users,
+  sessions,
+  accounts,
+  verifications,
+};
+
 // Drizzle derives read/insert TypeScript shapes directly from the schema.
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -344,6 +479,8 @@ export type Tenant = typeof tenants.$inferSelect;
 export type NewTenant = typeof tenants.$inferInsert;
 export type Membership = typeof memberships.$inferSelect;
 export type NewMembership = typeof memberships.$inferInsert;
+export type WorkspaceInvitation = typeof workspaceInvitations.$inferSelect;
+export type NewWorkspaceInvitation = typeof workspaceInvitations.$inferInsert;
 export type Folder = typeof folders.$inferSelect;
 export type NewFolder = typeof folders.$inferInsert;
 export type Document = typeof documents.$inferSelect;

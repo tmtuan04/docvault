@@ -7,9 +7,13 @@
 export {
   createDatabase,
   withTenantTransaction,
+  withUserTransaction,
   type Database,
   type DatabaseClient,
   type DatabaseTransaction,
 } from './client.js';
 
 export * from './schema.js';
+
+// Re-export query helpers so consumers use the same Drizzle package instance.
+export { and, desc, eq } from 'drizzle-orm';

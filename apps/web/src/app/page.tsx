@@ -1,65 +1,94 @@
-import Image from "next/image";
+import Link from 'next/link';
+import { ArrowRight, FileSearch, LockKeyhole, Sparkles } from 'lucide-react';
+
+import { Badge } from '@/components/ui/badge';
+import { buttonVariants } from '@/components/ui/button';
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+
+const features = [
+  {
+    icon: FileSearch,
+    title: 'Tài liệu trong một workspace',
+    description:
+      'Tổ chức file theo thư mục, tìm kiếm nhanh và giữ lịch sử phiên bản.',
+  },
+  {
+    icon: Sparkles,
+    title: 'Hỏi đáp có nguồn trích dẫn',
+    description:
+      'Nhận câu trả lời dựa trên đúng tài liệu của doanh nghiệp, không đoán mò.',
+  },
+  {
+    icon: LockKeyhole,
+    title: 'Cách ly dữ liệu theo tenant',
+    description:
+      'PostgreSQL RLS bảo vệ dữ liệu giữa các workspace ngay tại tầng database.',
+  },
+];
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,var(--color-muted),transparent_38%)]">
+      <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
+        <Link href="/" className="text-lg font-semibold tracking-tight">
+          DocVault
+        </Link>
+        <Link href="/login" className={buttonVariants({ variant: 'outline' })}>
+          Đăng nhập
+        </Link>
+      </nav>
+
+      <section className="mx-auto flex max-w-4xl flex-col items-center px-6 pb-20 pt-20 text-center sm:pt-28">
+        <Badge variant="secondary" className="mb-5">
+          14 ngày dùng thử Team
+        </Badge>
+        <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
+          Tìm và hỏi đáp trên tài liệu nội bộ của bạn
+        </h1>
+        <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">
+          DocVault kết hợp lưu trữ tài liệu và RAG có trích dẫn, được thiết kế
+          cho đội ngũ pháp lý, kế toán, HR và SME Việt Nam.
+        </p>
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <Link
+            href="/login"
+            className={cn(buttonVariants({ size: 'lg' }), 'min-w-40')}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            Bắt đầu miễn phí
+            <ArrowRight data-icon="inline-end" />
+          </Link>
+          <Link
+            href="#features"
+            className={cn(
+              buttonVariants({ variant: 'outline', size: 'lg' }),
+              'min-w-40',
+            )}
           >
-            Documentation
-          </a>
+            Xem tính năng
+          </Link>
         </div>
-      </main>
-    </div>
+      </section>
+
+      <section
+        id="features"
+        className="mx-auto grid max-w-6xl gap-4 px-6 pb-24 md:grid-cols-3"
+      >
+        {features.map((feature) => (
+          <Card key={feature.title} className="bg-card/80 backdrop-blur">
+            <CardHeader>
+              <feature.icon className="mb-3 size-5 text-muted-foreground" />
+              <CardTitle>{feature.title}</CardTitle>
+              <CardDescription>{feature.description}</CardDescription>
+            </CardHeader>
+          </Card>
+        ))}
+      </section>
+    </main>
   );
 }

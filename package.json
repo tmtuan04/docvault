@@ -21,7 +21,8 @@
     "db:migrate": "pnpm --filter @document-saas/db db:migrate",
     "db:studio": "pnpm --filter @document-saas/db db:studio",
     "db:check": "pnpm --filter @document-saas/db db:check",
-    "db:smoke-rls": "pnpm --filter @document-saas/db db:smoke-rls"
+    "db:smoke-rls": "pnpm --filter @document-saas/db db:smoke-rls",
+    "test:e2e": "pnpm --filter @document-saas/api test:e2e --runInBand"
   },
   "devDependencies": {
     "prettier": "^3.9.5",

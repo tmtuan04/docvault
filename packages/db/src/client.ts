@@ -66,3 +66,20 @@ export async function withTenantTransaction<T>(
     return callback(tx);
   });
 }
+
+/**
+ * Runs identity-scoped work such as listing all workspaces for one user.
+ *
+ * Unlike tenant-scoped queries, this context deliberately exposes only rows
+ * connected to `app.user_id` through dedicated SELECT policies.
+ */
+export async function withUserTransaction<T>(
+  db: Database,
+  userId: string,
+  callback: (tx: DatabaseTransaction) => Promise<T>,
+): Promise<T> {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`select set_config('app.user_id', ${userId}, true)`);
+    return callback(tx);
+  });
+}

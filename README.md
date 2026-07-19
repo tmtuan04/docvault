@@ -26,6 +26,7 @@ packages/
 pnpm install
 cp .env.example .env
 pnpm infra:up
+pnpm db:migrate
 pnpm dev
 ```
 
@@ -79,10 +80,36 @@ Tenant-scoped application queries must run through
 PostgreSQL setting, preventing pooled connections from leaking tenant context
 between requests.
 
+## Authentication and workspaces
+
+Better Auth is mounted by NestJS at `http://localhost:3001/api/auth`. The web
+app uses Email OTP sign-in. In local development, request a code at
+`http://localhost:3000/login` and read it from the terminal running the API:
+
+```text
+[DocVault OTP] sign-in code for you@example.com: 123456
+```
+
+After login, the dashboard can create a workspace with a 14-day Team trial,
+switch workspaces, list members, and create invitation links. Console OTP
+delivery is blocked in production; configure a real email provider before
+deploying.
+
+## Frontend UI
+
+All product UI in `apps/web` uses Tailwind CSS v4 and shadcn/ui. Add missing
+primitives through the CLI instead of introducing another component library:
+
+```bash
+cd apps/web
+pnpm dlx shadcn@latest add <component>
+```
+
 ## Checks
 
 ```bash
 pnpm lint
 pnpm typecheck
 pnpm build
+pnpm --filter @document-saas/api test:e2e --runInBand
 ```

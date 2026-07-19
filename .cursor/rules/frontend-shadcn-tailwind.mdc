@@ -1,0 +1,21 @@
+---
+description: Require shadcn/ui and Tailwind CSS for all DocVault frontend UI
+globs: apps/web/**/*.{ts,tsx,css}
+alwaysApply: false
+---
+
+# Frontend UI Standard
+
+- Build every interface in `apps/web` with Tailwind CSS utilities.
+- Use existing shadcn/ui components from `src/components/ui` for buttons,
+  inputs, cards, dialogs, selects, alerts, badges, avatars, menus, and similar
+  primitives.
+- Add missing primitives through the shadcn CLI instead of creating competing
+  base components.
+- Compose product-specific components from shadcn primitives; do not copy their
+  implementation into feature files.
+- Keep colors, radius, borders, and dark mode based on the CSS variables in
+  `src/app/globals.css`.
+- Do not introduce another component library or CSS-in-JS framework.
+- Plain semantic HTML is acceptable for layout and content when no shadcn
+  primitive is needed, styled with Tailwind classes.
