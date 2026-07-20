@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 
 import { ChatPanel } from '@/components/chat/chat-panel';
+import { BillingPanel } from '@/components/billing/billing-panel';
 import { DocumentsPanel } from '@/components/documents/documents-panel';
 import { SearchPanel } from '@/components/search/search-panel';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -318,9 +319,11 @@ export default function DashboardPage() {
                   <Badge variant="secondary">{roleLabel[selected.role]}</Badge>
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {selected.trial.isExpired
-                    ? 'Thời gian dùng thử đã kết thúc.'
-                    : `Còn ${selected.trial.daysRemaining} ngày dùng thử Team.`}
+                  {selected.status === 'active'
+                    ? `Đang dùng gói ${selected.plan} trả phí.`
+                    : selected.trial.isExpired
+                      ? 'Thời gian dùng thử đã kết thúc.'
+                      : `Còn ${selected.trial.daysRemaining} ngày dùng thử Team.`}
                 </p>
               </div>
               {selected.role === 'owner' || selected.role === 'admin' ? (
@@ -330,6 +333,14 @@ export default function DashboardPage() {
                 </Button>
               ) : null}
             </section>
+
+            <BillingPanel
+              tenantId={selected.id}
+              isAdmin={
+                selected.role === 'owner' || selected.role === 'admin'
+              }
+              onError={setError}
+            />
 
             <section className="grid gap-4 lg:grid-cols-2">
               <DocumentsPanel

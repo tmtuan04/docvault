@@ -108,6 +108,26 @@ deploying.
 Local default is `AI_PROVIDER=mock` (deterministic embeddings/chat, no paid
 key). Set `AI_PROVIDER=openai` and `OPENAI_API_KEY` to use real models.
 
+## Billing (SePay QR) and entitlement
+
+New workspaces get a 14-day Team trial. When the trial (or a paid period)
+expires the workspace is soft-locked: documents stay readable and searchable,
+but uploads and AI chat return HTTP 402 until payment.
+
+Upgrading works through SePay bank-transfer QR:
+
+1. Owner/admin picks a plan in the dashboard billing panel.
+2. The API creates a `payments` row with a unique transfer note
+   (e.g. `DVT1A2B3C4D5`) and shows a `qr.sepay.vn` image.
+3. SePay watches the bank account and POSTs each incoming transaction to
+   `POST /api/billing/sepay/webhook` (`Authorization: Apikey <key>`).
+4. The webhook matches the note, marks the payment `paid` (idempotent) and
+   activates/extends the subscription for 30 days.
+
+Configure `SEPAY_WEBHOOK_API_KEY`, `SEPAY_BANK_CODE`, `SEPAY_BANK_ACCOUNT`
+in `.env`. Locally you can simulate the webhook with `curl` using the
+reference code shown in the checkout dialog.
+
 ## Frontend UI
 
 All product UI in `apps/web` uses Tailwind CSS v4 and shadcn/ui. Add missing

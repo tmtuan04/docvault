@@ -18,6 +18,7 @@ import {
 } from '@document-saas/db';
 
 import { answerWithContext, embedText } from '../ai/ai.js';
+import { EntitlementService } from '../billing/entitlement.service.js';
 import { db } from '../database.js';
 import { ChatDto, SearchDocumentsDto } from '../documents/document.dto.js';
 
@@ -80,6 +81,8 @@ function buildSnippet(
 
 @Injectable()
 export class RetrievalService {
+  constructor(private readonly entitlement: EntitlementService) {}
+
   async search(tenantId: string, userId: string, input: SearchDocumentsDto) {
     const limit = input.limit ?? 20;
 
@@ -138,6 +141,7 @@ export class RetrievalService {
 
     return withTenantTransaction(db, tenantId, async (tx) => {
       await this.requireMember(tx, tenantId, userId);
+      await this.entitlement.assertEntitled(tx, tenantId, 'ai');
 
       const distance = cosineDistance(documentChunks.embedding, queryEmbedding);
 

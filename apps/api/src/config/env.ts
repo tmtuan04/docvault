@@ -38,12 +38,26 @@ export const env = {
   OPENAI_EMBEDDING_MODEL:
     process.env.OPENAI_EMBEDDING_MODEL ?? 'text-embedding-3-small',
   OPENAI_CHAT_MODEL: process.env.OPENAI_CHAT_MODEL ?? 'gpt-4o-mini',
+  SEPAY_WEBHOOK_API_KEY: process.env.SEPAY_WEBHOOK_API_KEY ?? '',
+  SEPAY_BANK_CODE: process.env.SEPAY_BANK_CODE ?? '',
+  SEPAY_BANK_ACCOUNT: process.env.SEPAY_BANK_ACCOUNT ?? '',
+  SEPAY_ACCOUNT_NAME: process.env.SEPAY_ACCOUNT_NAME ?? '',
 } as const;
 
 if (env.NODE_ENV === 'production' && env.OTP_DELIVERY === 'console') {
   throw new Error(
     'OTP_DELIVERY=console is forbidden in production; configure an email provider.',
   );
+}
+
+if (env.NODE_ENV === 'production' && env.AI_PROVIDER === 'mock') {
+  throw new Error(
+    'AI_PROVIDER=mock is forbidden in production; configure a real provider.',
+  );
+}
+
+if (env.NODE_ENV === 'production' && !env.SEPAY_WEBHOOK_API_KEY) {
+  throw new Error('SEPAY_WEBHOOK_API_KEY is required in production.');
 }
 
 if (env.AI_PROVIDER === 'openai' && !env.OPENAI_API_KEY) {

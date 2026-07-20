@@ -70,6 +70,20 @@ export const invitationStatusEnum = pgEnum('invitation_status', [
   'revoked',
 ]);
 
+export const subscriptionStatusEnum = pgEnum('subscription_status', [
+  'active',
+  'past_due',
+  'canceled',
+  'expired',
+]);
+
+export const paymentStatusEnum = pgEnum('payment_status', [
+  'pending',
+  'paid',
+  'failed',
+  'expired',
+]);
+
 /**
  * Global user identities.
  *
@@ -472,6 +486,64 @@ export const authSchema = {
   verifications,
 };
 
+/**
+ * One row per tenant: the currently paid plan and its billing period.
+ * Trials live on `tenants` directly; a subscription appears after payment.
+ */
+export const subscriptions = pgTable(
+  'subscriptions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    plan: tenantPlanEnum('plan').notNull(),
+    status: subscriptionStatusEnum('status').default('active').notNull(),
+    currentPeriodStart: timestamp('current_period_start', {
+      withTimezone: true,
+    }).notNull(),
+    currentPeriodEnd: timestamp('current_period_end', {
+      withTimezone: true,
+    }).notNull(),
+    ...timestamps,
+  },
+  (table) => [unique('subscriptions_tenant_uidx').on(table.tenantId)],
+);
+
+/**
+ * QR bank-transfer payment intents (SePay).
+ * `referenceCode` is the transfer note customers must include; the webhook
+ * matches incoming bank transactions back to a row through it.
+ */
+export const payments = pgTable(
+  'payments',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    plan: tenantPlanEnum('plan').notNull(),
+    amountVnd: bigint('amount_vnd', { mode: 'number' }).notNull(),
+    referenceCode: varchar('reference_code', { length: 32 }).notNull(),
+    status: paymentStatusEnum('status').default('pending').notNull(),
+    provider: varchar('provider', { length: 32 }).default('sepay').notNull(),
+    providerTransactionId: varchar('provider_transaction_id', { length: 128 }),
+    paidAt: timestamp('paid_at', { withTimezone: true }),
+    createdBy: uuid('created_by').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    ...timestamps,
+  },
+  (table) => [
+    unique('payments_reference_code_uidx').on(table.referenceCode),
+    unique('payments_provider_tx_uidx').on(
+      table.provider,
+      table.providerTransactionId,
+    ),
+    index('payments_tenant_created_idx').on(table.tenantId, table.createdAt),
+  ],
+);
+
 // Drizzle derives read/insert TypeScript shapes directly from the schema.
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -489,3 +561,7 @@ export type DocumentVersion = typeof documentVersions.$inferSelect;
 export type NewDocumentVersion = typeof documentVersions.$inferInsert;
 export type DocumentChunk = typeof documentChunks.$inferSelect;
 export type NewDocumentChunk = typeof documentChunks.$inferInsert;
+export type Subscription = typeof subscriptions.$inferSelect;
+export type NewSubscription = typeof subscriptions.$inferInsert;
+export type Payment = typeof payments.$inferSelect;
+export type NewPayment = typeof payments.$inferInsert;

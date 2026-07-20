@@ -56,6 +56,46 @@ export interface ChatCitation {
   score: number;
 }
 
+export interface BillingOverview {
+  entitlement: {
+    plan: string;
+    status: string;
+    isEntitled: boolean;
+    reason: 'trialing' | 'subscription' | 'expired';
+    trialEndsAt: string | null;
+    currentPeriodEnd: string | null;
+  };
+  plans: Array<{
+    id: string;
+    label: string;
+    amountVnd: number;
+    periodDays: number;
+  }>;
+  payments: Array<{
+    id: string;
+    plan: string;
+    amountVnd: number;
+    referenceCode: string;
+    status: 'pending' | 'paid' | 'failed' | 'expired';
+    paidAt: string | null;
+    createdAt: string;
+  }>;
+}
+
+export interface CheckoutIntent {
+  paymentId: string;
+  plan: string;
+  amountVnd: number;
+  referenceCode: string;
+  status: string;
+  qrImageUrl: string | null;
+  bank: {
+    code: string | null;
+    account: string | null;
+    accountName: string | null;
+  };
+}
+
 export async function apiFetch<T>(
   path: string,
   init?: RequestInit,

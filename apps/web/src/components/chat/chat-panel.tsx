@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Bot } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -53,7 +53,7 @@ export function ChatPanel({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Sparkles className="size-5" />
+          <Bot className="size-5" />
           RAG chat
         </CardTitle>
         <CardDescription>

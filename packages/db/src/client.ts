@@ -83,3 +83,22 @@ export async function withUserTransaction<T>(
     return callback(tx);
   });
 }
+
+/**
+ * Payment-webhook context: the provider only sends a transfer note, so the
+ * tenant is unknown until the matching payment row is found. A dedicated RLS
+ * policy exposes exactly the `payments` row whose reference code equals
+ * `app.billing_ref` — nothing else becomes readable.
+ */
+export async function withBillingWebhookTransaction<T>(
+  db: Database,
+  referenceCode: string,
+  callback: (tx: DatabaseTransaction) => Promise<T>,
+): Promise<T> {
+  return db.transaction(async (tx) => {
+    await tx.execute(
+      sql`select set_config('app.billing_ref', ${referenceCode}, true)`,
+    );
+    return callback(tx);
+  });
+}

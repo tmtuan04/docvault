@@ -6,6 +6,7 @@
  */
 export {
   createDatabase,
+  withBillingWebhookTransaction,
   withTenantTransaction,
   withUserTransaction,
   type Database,

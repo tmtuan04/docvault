@@ -32,3 +32,20 @@ export function isAllowedUploadMimeType(
 ): mimeType is AllowedUploadMimeType {
   return (ALLOWED_UPLOAD_MIME_TYPES as readonly string[]).includes(mimeType);
 }
+
+/** Paid plans purchasable through SePay QR transfer (VND per 30 days). */
+export const PAID_PLANS = {
+  pro: { label: 'Pro', amountVnd: 149_000 },
+  team: { label: 'Team', amountVnd: 499_000 },
+} as const;
+
+export type PaidPlan = keyof typeof PAID_PLANS;
+
+export const BILLING_PERIOD_DAYS = 30;
+
+/** Prefix of the bank-transfer note that SePay webhooks are matched by. */
+export const PAYMENT_REFERENCE_PREFIX = 'DVT';
+
+export function isPaidPlan(plan: string): plan is PaidPlan {
+  return plan in PAID_PLANS;
+}

@@ -225,6 +225,116 @@ describe('AppController (e2e)', () => {
     }
   });
 
+  it('locks write and AI after trial expiry, then unlocks via SePay webhook', async () => {
+    const email = `billing-${randomUUID()}@example.test`;
+    const agent = request.agent(app.getHttpServer() as Server);
+    let tenantId = '';
+
+    try {
+      await agent
+        .post('/api/auth/email-otp/send-verification-otp')
+        .send({ email, type: 'sign-in' })
+        .expect(200);
+      await agent
+        .post('/api/auth/sign-in/email-otp')
+        .send({ email, otp: '123456', name: 'Billing User' })
+        .expect(200);
+
+      const created = await agent
+        .post('/api/workspaces')
+        .send({ name: 'Billing Workspace' })
+        .expect(201);
+      tenantId = (created.body as CreatedWorkspaceBody).id;
+
+      // Force the trial into the past.
+      await withTenantTransaction(db, tenantId, (tx) =>
+        tx
+          .update(tenants)
+          .set({ trialEndsAt: new Date(Date.now() - 1000) })
+          .where(eq(tenants.id, tenantId)),
+      );
+
+      // Soft lock: uploads and AI chat return 402, search stays open.
+      await agent
+        .post(`/api/workspaces/${tenantId}/documents/upload-url`)
+        .send({ fileName: 'x.txt', mimeType: 'text/plain', sizeBytes: 10 })
+        .expect(402);
+      await agent
+        .post(`/api/workspaces/${tenantId}/chat`)
+        .send({ message: 'hello' })
+        .expect(402);
+      await agent
+        .get(`/api/workspaces/${tenantId}/search`)
+        .query({ q: 'anything' })
+        .expect(200);
+
+      const billing = await agent
+        .get(`/api/workspaces/${tenantId}/billing`)
+        .expect(200);
+      expect(
+        (billing.body as { entitlement: { isEntitled: boolean } }).entitlement
+          .isEntitled,
+      ).toBe(false);
+
+      const checkout = await agent
+        .post(`/api/workspaces/${tenantId}/billing/checkout`)
+        .send({ plan: 'team' })
+        .expect(201);
+      const checkoutBody = checkout.body as {
+        referenceCode: string;
+        amountVnd: number;
+      };
+
+      // Simulate the SePay webhook confirming the bank transfer.
+      await request(app.getHttpServer() as Server)
+        .post('/api/billing/sepay/webhook')
+        .send({
+          id: 987654,
+          transferType: 'in',
+          transferAmount: checkoutBody.amountVnd,
+          content: `CK ${checkoutBody.referenceCode} thanh toan DocVault`,
+        })
+        .expect(201);
+
+      // Replay must be idempotent.
+      await request(app.getHttpServer() as Server)
+        .post('/api/billing/sepay/webhook')
+        .send({
+          id: 987654,
+          transferType: 'in',
+          transferAmount: checkoutBody.amountVnd,
+          content: `CK ${checkoutBody.referenceCode} thanh toan DocVault`,
+        })
+        .expect(201);
+
+      const afterPayment = await agent
+        .get(`/api/workspaces/${tenantId}/billing`)
+        .expect(200);
+      const afterBody = afterPayment.body as {
+        entitlement: { isEntitled: boolean; reason: string; plan: string };
+        payments: Array<{ status: string }>;
+      };
+      expect(afterBody.entitlement.isEntitled).toBe(true);
+      expect(afterBody.entitlement.reason).toBe('subscription');
+      expect(afterBody.entitlement.plan).toBe('team');
+      expect(afterBody.payments[0]?.status).toBe('paid');
+
+      // Write access is restored.
+      await agent
+        .post(`/api/workspaces/${tenantId}/documents/upload-url`)
+        .send({ fileName: 'x.txt', mimeType: 'text/plain', sizeBytes: 10 })
+        .expect(201);
+    } finally {
+      if (tenantId) {
+        await withTenantTransaction(db, tenantId, async (tx) => {
+          await tx.delete(documents).where(eq(documents.tenantId, tenantId));
+          await tx.delete(tenants).where(eq(tenants.id, tenantId));
+        });
+      }
+      await db.delete(users).where(eq(users.email, email));
+    }
+  });
+
   it('rejects anonymous workspace access', () => {
     return request(app.getHttpServer() as Server)
       .get('/api/workspaces')

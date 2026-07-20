@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight, FileSearch, LockKeyhole, Sparkles } from 'lucide-react';
+import { ArrowRight, Bot, FileSearch, LockKeyhole } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
@@ -19,7 +19,7 @@ const features = [
       'Tổ chức file theo thư mục, tìm kiếm nhanh và giữ lịch sử phiên bản.',
   },
   {
-    icon: Sparkles,
+    icon: Bot,
     title: 'Hỏi đáp có nguồn trích dẫn',
     description:
       'Nhận câu trả lời dựa trên đúng tài liệu của doanh nghiệp, không đoán mò.',
