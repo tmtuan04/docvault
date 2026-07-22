@@ -147,7 +147,7 @@ Public pricing page: `/pricing` (also embedded on the landing page).
 
 ## Deploy AWS (EC2)
 
-Staging/production guide using EC2, RDS, ElastiCache, S3, ALB, ACM, SES:
+Staging/production guide (EC2, Supabase, S3, nginx, Resend OTP):
 
 ```text
 docs/DEPLOY_AWS_EC2.md

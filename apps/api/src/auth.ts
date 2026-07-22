@@ -5,6 +5,7 @@ import { emailOTP } from 'better-auth/plugins';
 
 import { db } from './database.js';
 import { env } from './config/env.js';
+import { sendOtpEmail } from './otp-delivery.js';
 
 export const auth = betterAuth({
   appName: 'DocVault',
@@ -34,16 +35,8 @@ export const auth = betterAuth({
       expiresIn: 10 * 60,
       otpLength: 6,
       ...(env.NODE_ENV === 'test' ? { generateOTP: () => '123456' } : {}),
-      sendVerificationOTP({ email, otp, type }) {
-        if (env.OTP_DELIVERY !== 'console') {
-          throw new Error(
-            'Email OTP provider is not configured for the selected delivery mode.',
-          );
-        }
-
-        // Development-only delivery. Replace with Resend/SES before production.
-        console.info(`[DocVault OTP] ${type} code for ${email}: ${otp}`);
-        return Promise.resolve();
+      async sendVerificationOTP({ email, otp, type }) {
+        await sendOtpEmail({ email, otp, type });
       },
     }),
   ],

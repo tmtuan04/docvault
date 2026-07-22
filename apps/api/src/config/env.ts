@@ -18,6 +18,10 @@ function required(name: string): string {
   return value;
 }
 
+const otpDelivery = (process.env.OTP_DELIVERY ?? 'console') as
+  | 'console'
+  | 'resend';
+
 export const env = {
   NODE_ENV: process.env.NODE_ENV ?? 'development',
   API_PORT: Number(process.env.API_PORT ?? 3001),
@@ -25,7 +29,13 @@ export const env = {
   DATABASE_URL: required('DATABASE_URL'),
   BETTER_AUTH_URL: process.env.BETTER_AUTH_URL ?? 'http://localhost:3001',
   BETTER_AUTH_SECRET: required('BETTER_AUTH_SECRET'),
-  OTP_DELIVERY: process.env.OTP_DELIVERY ?? 'console',
+  OTP_DELIVERY: otpDelivery,
+  /** From address for OTP email, e.g. DocVault <noreply@vaultdocs.cloud> */
+  OTP_FROM:
+    process.env.OTP_FROM ??
+    process.env.SES_FROM ??
+    'DocVault <onboarding@resend.dev>',
+  RESEND_API_KEY: process.env.RESEND_API_KEY ?? '',
   REDIS_URL: process.env.REDIS_URL ?? 'redis://localhost:6379',
   S3_ENDPOINT: process.env.S3_ENDPOINT || undefined,
   S3_REGION: process.env.S3_REGION ?? 'us-east-1',
@@ -44,10 +54,20 @@ export const env = {
   SEPAY_ACCOUNT_NAME: process.env.SEPAY_ACCOUNT_NAME ?? '',
 } as const;
 
+if (otpDelivery !== 'console' && otpDelivery !== 'resend') {
+  throw new Error(
+    `OTP_DELIVERY must be "console" or "resend" (got "${process.env.OTP_DELIVERY}")`,
+  );
+}
+
 if (env.NODE_ENV === 'production' && env.OTP_DELIVERY === 'console') {
   throw new Error(
-    'OTP_DELIVERY=console is forbidden in production; configure an email provider.',
+    'OTP_DELIVERY=console is forbidden in production; set OTP_DELIVERY=resend.',
   );
+}
+
+if (env.OTP_DELIVERY === 'resend' && !env.RESEND_API_KEY) {
+  throw new Error('RESEND_API_KEY is required when OTP_DELIVERY=resend');
 }
 
 if (env.NODE_ENV === 'production' && env.AI_PROVIDER === 'mock') {
