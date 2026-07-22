@@ -19,6 +19,7 @@ import {
 
 import { answerWithContext, embedText } from '../ai/ai.js';
 import { EntitlementService } from '../billing/entitlement.service.js';
+import { QuotaService } from '../billing/quota.service.js';
 import { db } from '../database.js';
 import { ChatDto, SearchDocumentsDto } from '../documents/document.dto.js';
 
@@ -81,7 +82,10 @@ function buildSnippet(
 
 @Injectable()
 export class RetrievalService {
-  constructor(private readonly entitlement: EntitlementService) {}
+  constructor(
+    private readonly entitlement: EntitlementService,
+    private readonly quota: QuotaService,
+  ) {}
 
   async search(tenantId: string, userId: string, input: SearchDocumentsDto) {
     const limit = input.limit ?? 20;
@@ -141,7 +145,12 @@ export class RetrievalService {
 
     return withTenantTransaction(db, tenantId, async (tx) => {
       await this.requireMember(tx, tenantId, userId);
-      await this.entitlement.assertEntitled(tx, tenantId, 'ai');
+      const entitlement = await this.entitlement.assertEntitled(
+        tx,
+        tenantId,
+        'ai',
+      );
+      await this.quota.assertAi(tx, tenantId, entitlement);
 
       const distance = cosineDistance(documentChunks.embedding, queryEmbedding);
 
@@ -185,6 +194,8 @@ export class RetrievalService {
           content: match.content,
         })),
       });
+
+      await this.quota.incrementAi(tx, tenantId);
 
       return {
         answer,

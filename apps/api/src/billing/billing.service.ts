@@ -30,6 +30,7 @@ import { env } from '../config/env.js';
 import { db } from '../database.js';
 import { type SepayWebhookPayload } from './billing.dto.js';
 import { EntitlementService } from './entitlement.service.js';
+import { QuotaService } from './quota.service.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const ADMIN_ROLES = new Set(['owner', 'admin']);
@@ -60,13 +61,17 @@ function buildQrImageUrl(input: { amountVnd: number; reference: string }) {
 export class BillingService {
   private readonly logger = new Logger(BillingService.name);
 
-  constructor(private readonly entitlement: EntitlementService) {}
+  constructor(
+    private readonly entitlement: EntitlementService,
+    private readonly quota: QuotaService,
+  ) {}
 
   async overview(tenantId: string, userId: string) {
     return withTenantTransaction(db, tenantId, async (tx) => {
       await this.requireMember(tx, tenantId, userId);
 
       const summary = await this.entitlement.summarize(tx, tenantId);
+      const usage = await this.quota.summarize(tx, tenantId, summary);
       const history = await tx
         .select({
           id: payments.id,
@@ -84,6 +89,7 @@ export class BillingService {
 
       return {
         entitlement: summary,
+        usage,
         plans: Object.entries(PAID_PLANS).map(([id, plan]) => ({
           id,
           label: plan.label,

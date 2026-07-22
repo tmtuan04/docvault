@@ -20,6 +20,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { QueueService } from '../queue/queue.service.js';
 import { StorageService } from '../storage/storage.service.js';
 import { EntitlementService } from '../billing/entitlement.service.js';
+import { QuotaService } from '../billing/quota.service.js';
 import { db } from '../database.js';
 import { CompleteUploadDto, CreateUploadUrlDto } from './document.dto.js';
 
@@ -56,6 +57,7 @@ export class DocumentsService {
     private readonly storage: StorageService,
     private readonly queue: QueueService,
     private readonly entitlement: EntitlementService,
+    private readonly quota: QuotaService,
   ) {}
 
   async list(tenantId: string, userId: string) {
@@ -89,7 +91,17 @@ export class DocumentsService {
   ) {
     return withTenantTransaction(db, tenantId, async (tx) => {
       await this.requireWriter(tx, tenantId, userId);
-      await this.entitlement.assertEntitled(tx, tenantId, 'write');
+      const entitlement = await this.entitlement.assertEntitled(
+        tx,
+        tenantId,
+        'write',
+      );
+      await this.quota.assertStorage(
+        tx,
+        tenantId,
+        entitlement,
+        input.sizeBytes,
+      );
 
       const documentId = randomUUID();
       const versionId = randomUUID();

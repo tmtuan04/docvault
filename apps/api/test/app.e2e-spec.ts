@@ -8,9 +8,11 @@ import {
   documents,
   eq,
   tenants,
+  usageMeters,
   users,
   withTenantTransaction,
 } from '@document-saas/db';
+import { currentUsagePeriod } from '@document-saas/shared';
 import request from 'supertest';
 
 import { AppModule } from './../src/app.module.js';
@@ -324,6 +326,59 @@ describe('AppController (e2e)', () => {
         .post(`/api/workspaces/${tenantId}/documents/upload-url`)
         .send({ fileName: 'x.txt', mimeType: 'text/plain', sizeBytes: 10 })
         .expect(201);
+    } finally {
+      if (tenantId) {
+        await withTenantTransaction(db, tenantId, async (tx) => {
+          await tx.delete(documents).where(eq(documents.tenantId, tenantId));
+          await tx.delete(tenants).where(eq(tenants.id, tenantId));
+        });
+      }
+      await db.delete(users).where(eq(users.email, email));
+    }
+  });
+
+  it('blocks AI chat when monthly quota is exhausted', async () => {
+    const email = `quota-${randomUUID()}@example.test`;
+    const agent = request.agent(app.getHttpServer() as Server);
+    let tenantId = '';
+
+    try {
+      await agent
+        .post('/api/auth/email-otp/send-verification-otp')
+        .send({ email, type: 'sign-in' })
+        .expect(200);
+      await agent
+        .post('/api/auth/sign-in/email-otp')
+        .send({ email, otp: '123456', name: 'Quota User' })
+        .expect(200);
+
+      const created = await agent
+        .post('/api/workspaces')
+        .send({ name: 'Quota Workspace' })
+        .expect(201);
+      tenantId = (created.body as CreatedWorkspaceBody).id;
+
+      await withTenantTransaction(db, tenantId, async (tx) => {
+        await tx.insert(usageMeters).values({
+          tenantId,
+          period: currentUsagePeriod(),
+          aiQueries: 1500,
+        });
+      });
+
+      await agent
+        .post(`/api/workspaces/${tenantId}/chat`)
+        .send({ message: 'hello' })
+        .expect(402);
+
+      const billing = await agent
+        .get(`/api/workspaces/${tenantId}/billing`)
+        .expect(200);
+      const body = billing.body as {
+        usage: { usage: { aiQueries: number }; limits: { aiQueriesPerMonth: number } };
+      };
+      expect(body.usage.usage.aiQueries).toBe(1500);
+      expect(body.usage.limits.aiQueriesPerMonth).toBe(1500);
     } finally {
       if (tenantId) {
         await withTenantTransaction(db, tenantId, async (tx) => {

@@ -1,23 +1,21 @@
 import {
   GetObjectCommand,
   PutObjectCommand,
-  S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Injectable } from '@nestjs/common';
 
 import { env } from '../config/env.js';
+import { createS3Client } from './s3-client.js';
 
 @Injectable()
 export class StorageService {
-  private readonly client = new S3Client({
+  private readonly client = createS3Client({
     region: env.S3_REGION,
     endpoint: env.S3_ENDPOINT,
     forcePathStyle: env.S3_FORCE_PATH_STYLE,
-    credentials: {
-      accessKeyId: env.S3_ACCESS_KEY,
-      secretAccessKey: env.S3_SECRET_KEY,
-    },
+    accessKeyId: env.S3_ACCESS_KEY,
+    secretAccessKey: env.S3_SECRET_KEY,
   });
 
   async createUploadUrl(input: {

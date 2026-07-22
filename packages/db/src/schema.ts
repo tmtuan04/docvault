@@ -544,6 +544,27 @@ export const payments = pgTable(
   ],
 );
 
+/**
+ * Monthly AI query counter per tenant. Storage and seats are computed live
+ * from documents/memberships; only AI needs a running tally.
+ */
+export const usageMeters = pgTable(
+  'usage_meters',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    period: varchar('period', { length: 7 }).notNull(),
+    aiQueries: integer('ai_queries').default(0).notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    unique('usage_meters_tenant_period_uidx').on(table.tenantId, table.period),
+    index('usage_meters_tenant_idx').on(table.tenantId),
+  ],
+);
+
 // Drizzle derives read/insert TypeScript shapes directly from the schema.
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -565,3 +586,5 @@ export type Subscription = typeof subscriptions.$inferSelect;
 export type NewSubscription = typeof subscriptions.$inferInsert;
 export type Payment = typeof payments.$inferSelect;
 export type NewPayment = typeof payments.$inferInsert;
+export type UsageMeter = typeof usageMeters.$inferSelect;
+export type NewUsageMeter = typeof usageMeters.$inferInsert;

@@ -52,9 +52,9 @@ export function ChatPanel({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Bot className="size-5" />
-          RAG chat
+        <CardTitle className="flex items-center gap-2 leading-none">
+          <Bot className="size-4 shrink-0" />
+          <span className="translate-y-px">RAG chat</span>
         </CardTitle>
         <CardDescription>
           Hỏi đáp theo tài liệu workspace kèm citations.

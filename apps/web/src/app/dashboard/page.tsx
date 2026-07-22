@@ -356,9 +356,9 @@ export default function DashboardPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="size-5" />
-                  Thành viên
+                <CardTitle className="flex items-center gap-2 leading-none">
+                  <Users className="size-4 shrink-0" />
+                  <span className="translate-y-px">Thành viên</span>
                   <Badge variant="secondary">{members.length}</Badge>
                 </CardTitle>
                 <CardDescription>

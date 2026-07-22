@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { FileText, LoaderCircle, Trash2, Upload } from 'lucide-react';
+import { Eye, FileText, LoaderCircle, Trash2, Upload } from 'lucide-react';
 
+import { DocumentPreviewDialog } from '@/components/documents/document-preview-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,6 +17,7 @@ import {
   apiFetch,
   uploadDocumentFile,
   type DocumentItem,
+  type DocumentPreview,
 } from '@/lib/api';
 
 const statusLabel: Record<DocumentItem['status'], string> = {
@@ -44,6 +46,9 @@ export function DocumentsPanel({
   const [loadedTenantId, setLoadedTenantId] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [preview, setPreview] = useState<DocumentPreview | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [loadingPreviewId, setLoadingPreviewId] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const isLoading = loadedTenantId !== tenantId;
 
@@ -111,13 +116,30 @@ export function DocumentsPanel({
     }
   }
 
+  async function openPreview(documentId: string) {
+    setLoadingPreviewId(documentId);
+    try {
+      const result = await apiFetch<DocumentPreview>(
+        `/api/workspaces/${tenantId}/documents/${documentId}/download-url`,
+      );
+      setPreview(result);
+      setPreviewOpen(true);
+    } catch (cause) {
+      onError(
+        cause instanceof Error ? cause.message : 'Không mở được tài liệu',
+      );
+    } finally {
+      setLoadingPreviewId('');
+    }
+  }
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-4">
         <div>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="size-5" />
-            Tài liệu
+          <CardTitle className="flex items-center gap-2 leading-none">
+            <FileText className="size-4 shrink-0" />
+            <span className="translate-y-px">Tài liệu</span>
           </CardTitle>
           <CardDescription>
             Hỗ trợ PDF, DOCX, TXT, MD. Worker sẽ extract và index sau khi upload.
@@ -188,6 +210,25 @@ export function DocumentsPanel({
               >
                 {statusLabel[document.status]}
               </Badge>
+              {document.status === 'ready' &&
+              (document.mimeType === 'application/pdf' ||
+                document.mimeType === 'text/plain') ? (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  aria-label={`Xem ${document.name}`}
+                  disabled={loadingPreviewId === document.id}
+                  onClick={() => {
+                    void openPreview(document.id);
+                  }}
+                >
+                  {loadingPreviewId === document.id ? (
+                    <LoaderCircle className="animate-spin" />
+                  ) : (
+                    <Eye />
+                  )}
+                </Button>
+              ) : null}
               {canWrite ? (
                 <Button
                   size="icon"
@@ -204,6 +245,14 @@ export function DocumentsPanel({
           ))
         )}
       </CardContent>
+      <DocumentPreviewDialog
+        open={previewOpen}
+        preview={preview}
+        onOpenChange={(open) => {
+          setPreviewOpen(open);
+          if (!open) setPreview(null);
+        }}
+      />
     </Card>
   );
 }

@@ -128,6 +128,40 @@ Configure `SEPAY_WEBHOOK_API_KEY`, `SEPAY_BANK_CODE`, `SEPAY_BANK_ACCOUNT`
 in `.env`. Locally you can simulate the webhook with `curl` using the
 reference code shown in the checkout dialog.
 
+## Pricing and quotas
+
+Plan limits are defined in `packages/shared` (`PLAN_LIMITS`):
+
+| Plan | Storage | Seats | AI chat / month |
+|------|---------|-------|-----------------|
+| Free | 1 GB | 1 | 20 |
+| Pro | 50 GB | 1 | 300 |
+| Team | 200 GB | 10 | 1 500 |
+| Business | 1 TB+ | 999 | 10 000 |
+
+Trial workspaces use **Team** limits. The API enforces quotas before upload
+(storage), invite/accept member (seats), and AI chat (monthly counter in
+`usage_meters`). The billing panel on the dashboard shows usage bars.
+
+Public pricing page: `/pricing` (also embedded on the landing page).
+
+## Deploy AWS (EC2)
+
+Staging/production guide using EC2, RDS, ElastiCache, S3, ALB, ACM, SES:
+
+```text
+docs/DEPLOY_AWS_EC2.md
+```
+
+Quick start on EC2 after AWS resources are ready:
+
+```bash
+export NEXT_PUBLIC_API_URL=https://api.docvault.vn
+export DOCVAULT_ENV_FILE=/opt/docvault/.env
+docker compose -f infra/aws/docker-compose.prod.yml build
+docker compose -f infra/aws/docker-compose.prod.yml up -d
+```
+
 ## Frontend UI
 
 All product UI in `apps/web` uses Tailwind CSS v4 and shadcn/ui. Add missing

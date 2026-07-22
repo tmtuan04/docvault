@@ -1,16 +1,26 @@
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { GetObjectCommand, S3Client, type S3ClientConfig } from '@aws-sdk/client-s3';
 
 import { env } from './config/env.js';
 
-const client = new S3Client({
-  region: env.S3_REGION,
-  endpoint: env.S3_ENDPOINT,
-  forcePathStyle: env.S3_FORCE_PATH_STYLE,
-  credentials: {
-    accessKeyId: env.S3_ACCESS_KEY,
-    secretAccessKey: env.S3_SECRET_KEY,
-  },
-});
+function createS3Client(): S3Client {
+  const config: S3ClientConfig = { region: env.S3_REGION };
+
+  if (env.S3_ENDPOINT) {
+    config.endpoint = env.S3_ENDPOINT;
+    config.forcePathStyle = env.S3_FORCE_PATH_STYLE;
+  }
+
+  if (env.S3_ACCESS_KEY && env.S3_SECRET_KEY) {
+    config.credentials = {
+      accessKeyId: env.S3_ACCESS_KEY,
+      secretAccessKey: env.S3_SECRET_KEY,
+    };
+  }
+
+  return new S3Client(config);
+}
+
+const client = createS3Client();
 
 export async function downloadObject(storageKey: string): Promise<Buffer> {
   const response = await client.send(

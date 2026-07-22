@@ -1,8 +1,9 @@
 'use client';
 
 import { FormEvent, useState, type ReactNode } from 'react';
-import { FileText, LoaderCircle, Search } from 'lucide-react';
+import { Eye, FileText, LoaderCircle, Search } from 'lucide-react';
 
+import { DocumentPreviewDialog } from '@/components/documents/document-preview-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,7 +14,11 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { apiFetch, type SearchResult } from '@/lib/api';
+import {
+  apiFetch,
+  type DocumentPreview,
+  type SearchResult,
+} from '@/lib/api';
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -52,6 +57,9 @@ export function SearchPanel({
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [preview, setPreview] = useState<DocumentPreview | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [loadingPreviewId, setLoadingPreviewId] = useState('');
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -73,12 +81,29 @@ export function SearchPanel({
     }
   }
 
+  async function openPreview(result: SearchResult) {
+    setLoadingPreviewId(result.chunkId);
+    try {
+      const documentPreview = await apiFetch<DocumentPreview>(
+        `/api/workspaces/${tenantId}/documents/${result.documentId}/download-url`,
+      );
+      setPreview(documentPreview);
+      setPreviewOpen(true);
+    } catch (cause) {
+      onError(
+        cause instanceof Error ? cause.message : 'Không mở được tài liệu',
+      );
+    } finally {
+      setLoadingPreviewId('');
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Search className="size-5" />
-          Tìm kiếm
+        <CardTitle className="flex items-center gap-2 leading-none">
+          <Search className="size-4 shrink-0" />
+          <span className="translate-y-px">Tìm kiếm</span>
         </CardTitle>
         <CardDescription>
           Tìm theo tên tài liệu và nội dung đã index.
@@ -111,9 +136,14 @@ export function SearchPanel({
               {results.length} đoạn khớp với “{submittedQuery}”
             </p>
             {results.map((result) => (
-              <div
+              <button
+                type="button"
                 key={result.chunkId}
-                className="space-y-1.5 rounded-lg border px-3 py-3"
+                className="w-full space-y-1.5 rounded-lg border px-3 py-3 text-left transition-colors hover:border-foreground/25 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                disabled={loadingPreviewId === result.chunkId}
+                onClick={() => {
+                  void openPreview(result);
+                }}
               >
                 <div className="flex items-center gap-2">
                   <FileText className="size-4 shrink-0 text-muted-foreground" />
@@ -121,15 +151,29 @@ export function SearchPanel({
                     {result.documentName}
                   </p>
                   <Badge variant="outline">Đoạn {result.chunkIndex + 1}</Badge>
+                  {loadingPreviewId === result.chunkId ? (
+                    <LoaderCircle className="size-4 shrink-0 animate-spin text-muted-foreground" />
+                  ) : (
+                    <Eye className="size-4 shrink-0 text-muted-foreground" />
+                  )}
                 </div>
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   {highlight(result.snippet, submittedQuery)}
                 </p>
-              </div>
+              </button>
             ))}
           </div>
         )}
       </CardContent>
+      <DocumentPreviewDialog
+        open={previewOpen}
+        preview={preview}
+        highlightText={submittedQuery}
+        onOpenChange={(open) => {
+          setPreviewOpen(open);
+          if (!open) setPreview(null);
+        }}
+      />
     </Card>
   );
 }

@@ -19,6 +19,8 @@ import {
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 
 import { env } from '../config/env.js';
+import { EntitlementService } from '../billing/entitlement.service.js';
+import { QuotaService } from '../billing/quota.service.js';
 import { db } from '../database.js';
 import { CreateInvitationDto, CreateWorkspaceDto } from './workspace.dto.js';
 
@@ -57,6 +59,11 @@ function trialSummary(trialEndsAt: Date | null) {
 
 @Injectable()
 export class WorkspacesService {
+  constructor(
+    private readonly entitlement: EntitlementService,
+    private readonly quota: QuotaService,
+  ) {}
+
   async listForUser(userId: string) {
     return withUserTransaction(db, userId, async (tx) => {
       const rows = await tx
@@ -144,6 +151,8 @@ export class WorkspacesService {
   ) {
     return withTenantTransaction(db, tenantId, async (tx) => {
       await this.requireAdmin(tx, tenantId, userId);
+      const entitlement = await this.entitlement.summarize(tx, tenantId);
+      await this.quota.assertSeat(tx, tenantId, entitlement);
 
       const [existingMember] = await tx
         .select({ id: memberships.id })
@@ -225,6 +234,9 @@ export class WorkspacesService {
           'Sign in with the email address that received this invitation',
         );
       }
+
+      const entitlement = await this.entitlement.summarize(tx, tenantId);
+      await this.quota.assertSeat(tx, tenantId, entitlement);
 
       await tx
         .insert(memberships)

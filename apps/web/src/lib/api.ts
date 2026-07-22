@@ -37,6 +37,13 @@ export interface DocumentItem {
   updatedAt: string;
 }
 
+export interface DocumentPreview {
+  documentId: string;
+  name: string;
+  mimeType: string;
+  downloadUrl: string;
+}
+
 export interface SearchResult {
   documentId: string;
   documentName: string;
@@ -64,6 +71,25 @@ export interface BillingOverview {
     reason: 'trialing' | 'subscription' | 'expired';
     trialEndsAt: string | null;
     currentPeriodEnd: string | null;
+  };
+  usage: {
+    plan: string;
+    limits: {
+      storageBytes: number;
+      seats: number;
+      aiQueriesPerMonth: number;
+    };
+    usage: {
+      storageBytes: number;
+      seats: number;
+      aiQueries: number;
+      period: string;
+    };
+    remaining: {
+      storageBytes: number;
+      seats: number;
+      aiQueries: number;
+    };
   };
   plans: Array<{
     id: string;

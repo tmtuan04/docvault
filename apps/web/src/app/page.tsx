@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowRight, Bot, FileSearch, LockKeyhole } from 'lucide-react';
 
+import { PricingCards } from '@/components/marketing/pricing-cards';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import {
@@ -39,12 +40,17 @@ export default function Home() {
         <Link href="/" className="text-lg font-semibold tracking-tight">
           DocVault
         </Link>
-        <Link href="/login" className={buttonVariants({ variant: 'outline' })}>
-          Đăng nhập
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link href="/pricing" className={buttonVariants({ variant: 'ghost' })}>
+            Bảng giá
+          </Link>
+          <Link href="/login" className={buttonVariants({ variant: 'outline' })}>
+            Đăng nhập
+          </Link>
+        </div>
       </nav>
 
-      <section className="mx-auto flex max-w-4xl flex-col items-center px-6 pb-20 pt-20 text-center sm:pt-28">
+      <section className="mx-auto flex max-w-4xl flex-col items-center px-6 pb-20 pt-10 text-center sm:pt-14">
         <Badge variant="secondary" className="mb-5">
           14 ngày dùng thử Team
         </Badge>
@@ -64,15 +70,25 @@ export default function Home() {
             <ArrowRight data-icon="inline-end" />
           </Link>
           <Link
-            href="#features"
+            href="/pricing"
             className={cn(
               buttonVariants({ variant: 'outline', size: 'lg' }),
               'min-w-40',
             )}
           >
-            Xem tính năng
+            Xem bảng giá
           </Link>
         </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-6 pb-24">
+        <div className="mb-8 text-center">
+          <h2 className="text-2xl font-semibold tracking-tight">Bảng giá</h2>
+          <p className="mt-2 text-muted-foreground">
+            14 ngày dùng thử Team miễn phí. Thanh toán QR qua SePay.
+          </p>
+        </div>
+        <PricingCards ctaLabel="Dùng thử 14 ngày" />
       </section>
 
       <section
@@ -82,8 +98,12 @@ export default function Home() {
         {features.map((feature) => (
           <Card key={feature.title} className="bg-card/80 backdrop-blur">
             <CardHeader>
-              <feature.icon className="mb-3 size-5 text-muted-foreground" />
-              <CardTitle>{feature.title}</CardTitle>
+              <div className="flex items-center gap-2.5">
+                <feature.icon className="size-4 shrink-0 text-muted-foreground" />
+                <CardTitle className="translate-y-px leading-none">
+                  {feature.title}
+                </CardTitle>
+              </div>
               <CardDescription>{feature.description}</CardDescription>
             </CardHeader>
           </Card>
