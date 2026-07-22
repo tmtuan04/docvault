@@ -43,7 +43,7 @@ Next steps:
   3. RDS init:    psql "$DATABASE_ADMIN_URL" -f infra/aws/rds-init.sql
   4. Migrate:     cd /opt/docvault && pnpm install && pnpm db:migrate
   5. Build/run:
-       export NEXT_PUBLIC_API_URL=https://api.docvault.vn
+       export NEXT_PUBLIC_API_URL=https://api.vaultdocs.cloud
        export DOCVAULT_ENV_FILE=/opt/docvault/.env
        docker compose -f infra/aws/docker-compose.prod.yml build
        docker compose -f infra/aws/docker-compose.prod.yml up -d

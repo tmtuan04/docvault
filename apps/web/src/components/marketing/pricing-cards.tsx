@@ -84,7 +84,7 @@ export function PricingCards({
             <CardFooter>
               {isBusiness ? (
                 <a
-                  href="mailto:hello@docvault.vn"
+                  href="mailto:hello@vaultdocs.cloud"
                   className={cn(buttonVariants({ variant: 'outline' }), 'w-full')}
                 >
                   Liên hệ báo giá

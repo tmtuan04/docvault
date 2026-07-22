@@ -57,7 +57,7 @@ services:
       context: ../..
       dockerfile: infra/aws/Dockerfile.web
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.docvault.vn}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.vaultdocs.cloud}
     restart: unless-stopped
     env_file:
       - ${DOCVAULT_ENV_FILE:-../../.env}

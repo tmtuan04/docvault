@@ -156,7 +156,7 @@ docs/DEPLOY_AWS_EC2.md
 Quick start on EC2 after AWS resources are ready:
 
 ```bash
-export NEXT_PUBLIC_API_URL=https://api.docvault.vn
+export NEXT_PUBLIC_API_URL=https://api.vaultdocs.cloud
 export DOCVAULT_ENV_FILE=/opt/docvault/.env
 docker compose -f infra/aws/docker-compose.prod.yml build
 docker compose -f infra/aws/docker-compose.prod.yml up -d
