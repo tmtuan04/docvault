@@ -1,10 +1,20 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Eye, FileText, LoaderCircle, Trash2, Upload } from 'lucide-react';
+import {
+  Check,
+  CircleAlert,
+  Eye,
+  FileText,
+  LoaderCircle,
+  Trash2,
+  Upload,
+} from 'lucide-react';
 
-import { DocumentPreviewDialog } from '@/components/documents/document-preview-dialog';
-import { Badge } from '@/components/ui/badge';
+import {
+  canPreviewDocument,
+  DocumentPreviewDialog,
+} from '@/components/documents/document-preview-dialog';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -26,6 +36,42 @@ const statusLabel: Record<DocumentItem['status'], string> = {
   ready: 'Sẵn sàng',
   failed: 'Lỗi',
 };
+
+function DocumentStatusIcon({ status }: { status: DocumentItem['status'] }) {
+  if (status === 'ready') {
+    return (
+      <span
+        title={statusLabel.ready}
+        aria-label={statusLabel.ready}
+        className="grid size-8 shrink-0 place-items-center"
+      >
+        <Check className="size-4 text-emerald-600" strokeWidth={2.5} />
+      </span>
+    );
+  }
+
+  if (status === 'failed') {
+    return (
+      <span
+        title={statusLabel.failed}
+        aria-label={statusLabel.failed}
+        className="grid size-8 shrink-0 place-items-center"
+      >
+        <CircleAlert className="size-4 text-destructive" />
+      </span>
+    );
+  }
+
+  return (
+    <span
+      title={statusLabel[status]}
+      aria-label={statusLabel[status]}
+      className="grid size-8 shrink-0 place-items-center"
+    >
+      <LoaderCircle className="size-4 animate-spin text-muted-foreground" />
+    </span>
+  );
+}
 
 function formatBytes(size: number): string {
   if (size < 1024) return `${size} B`;
@@ -199,20 +245,9 @@ export function DocumentsPanel({
                   {formatBytes(document.sizeBytes)} · {document.mimeType}
                 </p>
               </div>
-              <Badge
-                variant={
-                  document.status === 'ready'
-                    ? 'secondary'
-                    : document.status === 'failed'
-                      ? 'destructive'
-                      : 'outline'
-                }
-              >
-                {statusLabel[document.status]}
-              </Badge>
+              <DocumentStatusIcon status={document.status} />
               {document.status === 'ready' &&
-              (document.mimeType === 'application/pdf' ||
-                document.mimeType === 'text/plain') ? (
+              canPreviewDocument(document.mimeType) ? (
                 <Button
                   size="icon"
                   variant="ghost"
