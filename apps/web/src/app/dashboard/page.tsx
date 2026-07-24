@@ -17,6 +17,7 @@ import { BillingPanel } from '@/components/billing/billing-panel';
 import { DocumentsPanel } from '@/components/documents/documents-panel';
 import { SearchPanel } from '@/components/search/search-panel';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ErrorDialog } from '@/components/ui/error-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -63,7 +64,9 @@ export default function DashboardPage() {
   const [selectedId, setSelectedId] = useState('');
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [errorDialog, setErrorDialog] = useState({ open: false, message: '' });
+  const showError = (message: string) =>
+    setErrorDialog({ open: true, message });
   const [createOpen, setCreateOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [workspaceName, setWorkspaceName] = useState('');
@@ -103,9 +106,11 @@ export default function DashboardPage() {
       })
       .catch((cause: unknown) => {
         if (cancelled) return;
-        setError(
-          cause instanceof Error ? cause.message : 'Không thể tải workspace',
-        );
+        setErrorDialog({
+          open: true,
+          message:
+            cause instanceof Error ? cause.message : 'Không thể tải workspace',
+        });
         setIsLoading(false);
       });
 
@@ -125,9 +130,13 @@ export default function DashboardPage() {
       })
       .catch((cause: unknown) => {
         if (!cancelled) {
-          setError(
-            cause instanceof Error ? cause.message : 'Không thể tải thành viên',
-          );
+          setErrorDialog({
+            open: true,
+            message:
+              cause instanceof Error
+                ? cause.message
+                : 'Không thể tải thành viên',
+          });
         }
       });
 
@@ -138,7 +147,7 @@ export default function DashboardPage() {
 
   async function createWorkspace(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError('');
+    setErrorDialog({ open: false, message: '' });
     setIsSubmitting(true);
 
     try {
@@ -151,7 +160,7 @@ export default function DashboardPage() {
       setWorkspaceName('');
       setCreateOpen(false);
     } catch (cause) {
-      setError(
+      showError(
         cause instanceof Error ? cause.message : 'Không thể tạo workspace',
       );
     } finally {
@@ -163,7 +172,7 @@ export default function DashboardPage() {
     event.preventDefault();
     if (!selected) return;
 
-    setError('');
+    setErrorDialog({ open: false, message: '' });
     setInviteResult('');
     setIsSubmitting(true);
 
@@ -181,7 +190,7 @@ export default function DashboardPage() {
       );
       setInviteEmail('');
     } catch (cause) {
-      setError(
+      showError(
         cause instanceof Error ? cause.message : 'Không thể tạo lời mời',
       );
     } finally {
@@ -283,13 +292,6 @@ export default function DashboardPage() {
       </header>
 
       <div className="mx-auto max-w-[1400px] space-y-6 px-6 py-8">
-        {error ? (
-          <Alert variant="destructive">
-            <AlertTitle>Đã xảy ra lỗi</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        ) : null}
-
         {!selected ? (
           <Card className="mx-auto max-w-xl text-center">
             <CardHeader>
@@ -339,18 +341,18 @@ export default function DashboardPage() {
               isAdmin={
                 selected.role === 'owner' || selected.role === 'admin'
               }
-              onError={setError}
+              onError={showError}
             />
 
             <section className="grid gap-4 lg:grid-cols-2">
               <DocumentsPanel
                 tenantId={selected.id}
                 canWrite={selected.role !== 'viewer'}
-                onError={setError}
+                onError={showError}
               />
               <div className="space-y-4">
-                <SearchPanel tenantId={selected.id} onError={setError} />
-                <ChatPanel tenantId={selected.id} onError={setError} />
+                <SearchPanel tenantId={selected.id} onError={showError} />
+                <ChatPanel tenantId={selected.id} onError={showError} />
               </div>
             </section>
 
@@ -498,6 +500,14 @@ export default function DashboardPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ErrorDialog
+        open={errorDialog.open}
+        message={errorDialog.message}
+        onOpenChange={(open) =>
+          setErrorDialog((current) => ({ ...current, open }))
+        }
+      />
     </main>
   );
 }

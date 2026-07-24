@@ -179,6 +179,10 @@ export async function uploadDocumentFile(input: {
     method: 'PUT',
     headers: prepared.headers,
     body: input.file,
+  }).catch(() => {
+    throw new Error(
+      'Không thể tải file lên kho lưu trữ (S3). Thường do CORS bucket chưa cho phép domain app — liên hệ quản trị viên.',
+    );
   });
 
   if (!uploadResponse.ok) {
