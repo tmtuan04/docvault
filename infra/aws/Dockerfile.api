@@ -13,7 +13,10 @@ COPY apps/worker/package.json apps/worker/
 COPY apps/web/package.json apps/web/
 COPY packages/db/package.json packages/db/
 COPY packages/shared/package.json packages/shared/
-RUN pnpm install --frozen-lockfile
+# Hoist deps so runtime can resolve from /app/node_modules (pnpm default
+# isolates packages under apps/*/node_modules and breaks a root-only COPY).
+RUN printf 'node-linker=hoisted\n' > .npmrc \
+ && pnpm install --frozen-lockfile
 
 FROM deps AS builder
 COPY . .

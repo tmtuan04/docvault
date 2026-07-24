@@ -11,7 +11,8 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 COPY apps/worker/package.json apps/worker/
 COPY packages/db/package.json packages/db/
 COPY packages/shared/package.json packages/shared/
-RUN pnpm install --frozen-lockfile
+RUN printf 'node-linker=hoisted\n' > .npmrc \
+ && pnpm install --frozen-lockfile
 
 FROM deps AS builder
 COPY . .

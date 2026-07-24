@@ -25,7 +25,8 @@ export const ALLOWED_UPLOAD_MIME_TYPES = [
 
 export type AllowedUploadMimeType = (typeof ALLOWED_UPLOAD_MIME_TYPES)[number];
 
-export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+// 25MB 
+export const MAX_UPLOAD_BYTES = 250 * 1024 * 1024;
 
 export function isAllowedUploadMimeType(
   mimeType: string,
