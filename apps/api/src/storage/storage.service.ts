@@ -23,11 +23,12 @@ export class StorageService {
     mimeType: string;
     sizeBytes: number;
   }) {
+    // Do not sign ContentLength: browsers set it automatically and a mismatch
+    // yields SignatureDoesNotMatch / 403 that Chrome often surfaces as CORS.
     const command = new PutObjectCommand({
       Bucket: env.S3_BUCKET,
       Key: input.storageKey,
       ContentType: input.mimeType,
-      ContentLength: input.sizeBytes,
     });
 
     return getSignedUrl(this.client, command, { expiresIn: 60 * 10 });

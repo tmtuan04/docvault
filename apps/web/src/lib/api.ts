@@ -175,18 +175,24 @@ export async function uploadDocumentFile(input: {
     }),
   });
 
-  const uploadResponse = await fetch(prepared.uploadUrl, {
-    method: 'PUT',
-    headers: prepared.headers,
-    body: input.file,
-  }).catch(() => {
+  let uploadResponse: Response;
+  try {
+    uploadResponse = await fetch(prepared.uploadUrl, {
+      method: 'PUT',
+      headers: prepared.headers,
+      body: input.file,
+    });
+  } catch {
     throw new Error(
-      'Không thể tải file lên kho lưu trữ (S3). Thường do CORS bucket chưa cho phép domain app — liên hệ quản trị viên.',
+      'Không thể tải file lên kho lưu trữ (S3). Kiểm tra CORS bucket và Content-Type khớp presigned URL.',
     );
-  });
+  }
 
   if (!uploadResponse.ok) {
-    throw new Error(`Upload to storage failed (${uploadResponse.status})`);
+    const detail = await uploadResponse.text().catch(() => '');
+    throw new Error(
+      `Upload to storage failed (${uploadResponse.status})${detail ? `: ${detail.slice(0, 200)}` : ''}`,
+    );
   }
 
   const checksumBuffer = await input.file.arrayBuffer();
