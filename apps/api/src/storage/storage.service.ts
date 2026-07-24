@@ -23,12 +23,14 @@ export class StorageService {
     mimeType: string;
     sizeBytes: number;
   }) {
-    // Do not sign ContentLength: browsers set it automatically and a mismatch
-    // yields SignatureDoesNotMatch / 403 that Chrome often surfaces as CORS.
+    // Browser PUT: do not sign ContentType/ContentLength. Extra signed headers
+    // often become SignatureDoesNotMatch; Chrome then reports a CORS failure.
+    // Mime type is already stored in Postgres for the document row.
+    void input.mimeType;
+    void input.sizeBytes;
     const command = new PutObjectCommand({
       Bucket: env.S3_BUCKET,
       Key: input.storageKey,
-      ContentType: input.mimeType,
     });
 
     return getSignedUrl(this.client, command, { expiresIn: 60 * 10 });

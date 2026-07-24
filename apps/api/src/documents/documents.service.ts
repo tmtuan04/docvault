@@ -162,9 +162,8 @@ export class DocumentsService {
         document,
         version,
         uploadUrl,
-        headers: {
-          'Content-Type': input.mimeType,
-        },
+        // Empty: must not send Content-Type unless it was included in the signature.
+        headers: {} as Record<string, string>,
       };
     });
   }

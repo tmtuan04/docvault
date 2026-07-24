@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { Toaster } from 'react-hot-toast';
+
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -13,7 +15,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi" className="h-full font-sans antialiased">
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        {children}
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            className: 'text-sm',
+          }}
+        />
+      </body>
     </html>
   );
 }

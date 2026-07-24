@@ -179,19 +179,19 @@ export async function uploadDocumentFile(input: {
   try {
     uploadResponse = await fetch(prepared.uploadUrl, {
       method: 'PUT',
-      headers: prepared.headers,
+      // No custom headers — avoids CORS preflight + signature mismatches.
       body: input.file,
     });
   } catch {
     throw new Error(
-      'Không thể tải file lên kho lưu trữ (S3). Kiểm tra CORS bucket và Content-Type khớp presigned URL.',
+      'Không thể tải file lên kho lưu trữ (S3). Kiểm tra CORS / IAM PutObject trên bucket.',
     );
   }
 
   if (!uploadResponse.ok) {
     const detail = await uploadResponse.text().catch(() => '');
     throw new Error(
-      `Upload to storage failed (${uploadResponse.status})${detail ? `: ${detail.slice(0, 200)}` : ''}`,
+      `Upload to storage failed (${uploadResponse.status})${detail ? `: ${detail.slice(0, 300)}` : ''}`,
     );
   }
 
