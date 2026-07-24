@@ -17,18 +17,23 @@ RUN pnpm install --frozen-lockfile
 
 FROM deps AS builder
 COPY . .
-# Build workspace packages + API, then create a self-contained deploy dir
-# (pnpm does not put deps in a root node_modules layout Node can resolve alone).
+# Limit Node heap so t3.small (2GB) is less likely to SIGABRT (exit 134).
+ENV NODE_OPTIONS=--max-old-space-size=1536
 RUN pnpm --filter @document-saas/shared build \
  && pnpm --filter @document-saas/db build \
  && pnpm --filter @document-saas/api build \
- && pnpm --filter @document-saas/api deploy --prod --legacy /deploy \
- && mkdir -p /deploy/dist \
- && cp -a apps/api/dist/. /deploy/dist/
+ && mkdir -p /out/apps/api /out/packages/db /out/packages/shared \
+ && cp -a package.json pnpm-workspace.yaml /out/ \
+ && cp -a node_modules /out/ \
+ && cp -a apps/api/dist apps/api/package.json apps/api/node_modules /out/apps/api/ \
+ && cp -a packages/db/dist packages/db/package.json /out/packages/db/ \
+ && if [ -d packages/db/node_modules ]; then cp -a packages/db/node_modules /out/packages/db/; fi \
+ && cp -a packages/shared/dist packages/shared/package.json /out/packages/shared/ \
+ && if [ -d packages/shared/node_modules ]; then cp -a packages/shared/node_modules /out/packages/shared/; fi
 
 FROM node:22-bookworm-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=builder /deploy ./
+COPY --from=builder /out ./
 EXPOSE 3001
-CMD ["node", "dist/main.js"]
+CMD ["node", "apps/api/dist/main.js"]
