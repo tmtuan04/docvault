@@ -175,24 +175,29 @@ export async function uploadDocumentFile(input: {
     }),
   });
 
-  let uploadResponse: Response;
+  // Browser may fail to read the S3 response (CORS) even when PutObject succeeded.
+  // Always attempt /complete; API confirms the object with HeadObject.
   try {
-    uploadResponse = await fetch(prepared.uploadUrl, {
+    const uploadResponse = await fetch(prepared.uploadUrl, {
       method: 'PUT',
-      // No custom headers — avoids CORS preflight + signature mismatches.
       body: input.file,
     });
-  } catch {
-    throw new Error(
-      'Không thể tải file lên kho lưu trữ (S3). Kiểm tra CORS / IAM PutObject trên bucket.',
-    );
-  }
-
-  if (!uploadResponse.ok) {
-    const detail = await uploadResponse.text().catch(() => '');
-    throw new Error(
-      `Upload to storage failed (${uploadResponse.status})${detail ? `: ${detail.slice(0, 300)}` : ''}`,
-    );
+    if (!uploadResponse.ok && uploadResponse.status !== 0) {
+      // Hard client/auth errors — object almost certainly missing.
+      if (uploadResponse.status === 403 || uploadResponse.status === 401) {
+        const detail = await uploadResponse.text().catch(() => '');
+        throw new Error(
+          `Upload to storage failed (${uploadResponse.status})${detail ? `: ${detail.slice(0, 300)}` : ''}`,
+        );
+      }
+    }
+  } catch (cause) {
+    if (!(cause instanceof TypeError)) {
+      throw cause instanceof Error
+        ? cause
+        : new Error('Không thể tải file lên kho lưu trữ (S3).');
+    }
+    // TypeError: Failed to fetch — often CORS after a successful write; continue.
   }
 
   const checksumBuffer = await input.file.arrayBuffer();

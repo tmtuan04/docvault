@@ -1,5 +1,6 @@
 import {
   GetObjectCommand,
+  HeadObjectCommand,
   PutObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -34,6 +35,20 @@ export class StorageService {
     });
 
     return getSignedUrl(this.client, command, { expiresIn: 60 * 10 });
+  }
+
+  async objectExists(storageKey: string): Promise<boolean> {
+    try {
+      await this.client.send(
+        new HeadObjectCommand({
+          Bucket: env.S3_BUCKET,
+          Key: storageKey,
+        }),
+      );
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async createDownloadUrl(storageKey: string, fileName: string) {

@@ -213,6 +213,13 @@ export class DocumentsService {
         throw new NotFoundException('Document version not found');
       }
 
+      const uploaded = await this.storage.objectExists(version.storageKey);
+      if (!uploaded) {
+        throw new BadRequestException(
+          'Uploaded object not found in storage; retry the upload',
+        );
+      }
+
       await tx
         .update(documentVersions)
         .set({ checksum: input.checksum })
