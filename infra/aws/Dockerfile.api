@@ -13,28 +13,22 @@ COPY apps/worker/package.json apps/worker/
 COPY apps/web/package.json apps/web/
 COPY packages/db/package.json packages/db/
 COPY packages/shared/package.json packages/shared/
-# Hoist deps so runtime can resolve from /app/node_modules (pnpm default
-# isolates packages under apps/*/node_modules and breaks a root-only COPY).
-RUN printf 'node-linker=hoisted\n' > .npmrc \
- && pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 FROM deps AS builder
 COPY . .
+# Build workspace packages + API, then create a self-contained deploy dir
+# (pnpm does not put deps in a root node_modules layout Node can resolve alone).
 RUN pnpm --filter @document-saas/shared build \
  && pnpm --filter @document-saas/db build \
- && pnpm --filter @document-saas/api build
+ && pnpm --filter @document-saas/api build \
+ && pnpm --filter @document-saas/api deploy --prod --legacy /deploy \
+ && mkdir -p /deploy/dist \
+ && cp -a apps/api/dist/. /deploy/dist/
 
 FROM node:22-bookworm-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/api/dist ./apps/api/dist
-COPY --from=builder /app/apps/api/package.json ./apps/api/package.json
-COPY --from=builder /app/packages/db/dist ./packages/db/dist
-COPY --from=builder /app/packages/db/package.json ./packages/db/package.json
-COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
-COPY --from=builder /app/packages/shared/package.json ./packages/shared/package.json
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
+COPY --from=builder /deploy ./
 EXPOSE 3001
-CMD ["node", "apps/api/dist/main.js"]
+CMD ["node", "dist/main.js"]

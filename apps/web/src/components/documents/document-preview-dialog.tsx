@@ -168,8 +168,10 @@ export function DocumentPreviewDialog({
                   'shrink-0',
                 )}
               >
-                <ExternalLink />
-                Mở tab mới
+                <div className="flex items-center gap-2">
+                  <ExternalLink className="size-4 shrink-0" />
+                  <span className="text-sm">Mở tab mới</span>
+                </div>
               </a>
             ) : null}
           </div>

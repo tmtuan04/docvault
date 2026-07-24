@@ -8,28 +8,24 @@ WORKDIR /app
 
 FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY apps/api/package.json apps/api/
 COPY apps/worker/package.json apps/worker/
+COPY apps/web/package.json apps/web/
 COPY packages/db/package.json packages/db/
 COPY packages/shared/package.json packages/shared/
-RUN printf 'node-linker=hoisted\n' > .npmrc \
- && pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 FROM deps AS builder
 COPY . .
 RUN pnpm --filter @document-saas/shared build \
  && pnpm --filter @document-saas/db build \
- && pnpm --filter @document-saas/worker build
+ && pnpm --filter @document-saas/worker build \
+ && pnpm --filter @document-saas/worker deploy --prod --legacy /deploy \
+ && mkdir -p /deploy/dist \
+ && cp -a apps/worker/dist/. /deploy/dist/
 
 FROM node:22-bookworm-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/worker/dist ./apps/worker/dist
-COPY --from=builder /app/apps/worker/package.json ./apps/worker/package.json
-COPY --from=builder /app/packages/db/dist ./packages/db/dist
-COPY --from=builder /app/packages/db/package.json ./packages/db/package.json
-COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
-COPY --from=builder /app/packages/shared/package.json ./packages/shared/package.json
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
-CMD ["node", "apps/worker/dist/main.js"]
+COPY --from=builder /deploy ./
+CMD ["node", "dist/main.js"]
